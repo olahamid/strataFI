@@ -1,0 +1,22 @@
+[package]
+name = "strataFi"
+version = "1.0.0"
+authors = ["Ola Hamid"]
+
+[addresses]
+stratafi = "0x1bf369fe58a4b2bbd2f72c2fe51f78b29513c2db3ed4b4369a6993ca75442048"
+admin = "0x1bf369fe58a4b2bbd2f72c2fe51f78b29513c2db3ed4b4369a6993ca75442048"
+
+[dev-addresses]
+stratafi = "0xCAFE"
+admin = "0xDEAD"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "main"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dependencies.AptosStdlib]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "main"
+subdir = "aptos-move/framework/aptos-stdlib"

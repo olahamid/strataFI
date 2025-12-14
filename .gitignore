@@ -1,0 +1,25 @@
+# Build outputs
+build/
+.aptos/
+
+# Move compiler artifacts
+*.mv
+*.blob
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Dependencies
+node_modules/
