@@ -8,10 +8,9 @@ module stratafi::pool_tokens {
 
 
     // core Aptos frameWork 
-    use std::signer;
     use std::string::{Self, String};
     use std::option;
-    use aptos_framework::fungible_asset::{Self, MintRef, TransferRef, BurnRef, Metadata};
+    use aptos_framework::fungible_asset::{Self, MintRef, BurnRef, Metadata};
     use aptos_framework::object::{Self, Object};
     use aptos_framework::primary_fungible_store;
 
@@ -102,10 +101,100 @@ module stratafi::pool_tokens {
     
         // Convert pool_id to bytes
         let pool_bytes = std::bcs::to_bytes(&pool_id);    
-        std::vector::append(&mut seed, pool_bytes);
+        seed.append(pool_bytes);
         // Append tranche type
-        std::vector::push_back(&mut seed, tranche_type);
+        seed.push_back(tranche_type);
     
         seed 
+    }
+
+    // mint pool tokens, mint to investors 
+    public fun mint_pool_tokens(
+        token_metadata: Object<Metadata>,
+        recipeint: address, 
+        amount: u64,
+    ) acquires Pool_Token_Capabilities {
+        // get the address of the token 
+        let token_addr = object::object_address(&token_metadata);
+        // borrow the capabilities
+        let capabilities = borrow_global<Pool_Token_Capabilities>(token_addr);
+
+        let recipient_store = primary_fungible_store::ensure_primary_store_exists(
+            recipeint,
+            token_metadata,
+        );
+
+        let fa = fungible_asset::mint(&capabilities.mint_cap, amount);
+        fungible_asset::deposit(recipient_store, fa);
+    }
+
+    // burn function-  the burn function will be called when investors redeem their pool tokens
+    public fun burn_pool_tokens(
+        owner_sign: &signer,
+        token_metadata: Object<Metadata>,
+        holder: address,
+        amount: u64,
+    ) acquires Pool_Token_Capabilities {
+        // get the address of the token
+        let token_addr = object::object_address(&token_metadata);
+        // ge tthe capability of the token to burn 
+        let capabilities = borrow_global<Pool_Token_Capabilities>(token_addr);
+        // get the holder's store
+        let holder_store = primary_fungible_store::primary_store(
+            holder,
+            token_metadata
+        );
+
+        let fa = fungible_asset::withdraw(
+            owner_sign,
+            holder_store,
+            amount
+        );
+
+        fungible_asset::burn(&capabilities.burn_cap, fa);
+    }
+    
+
+    // =========================
+    // VIEW FUNCTIONS
+    // =========================
+
+    #[view]
+    /// Get token balance of an address
+    public fun balance_of(
+        owner: address,
+        token_metadata: Object<Metadata>
+    ): u64 {
+        primary_fungible_store::balance(owner, token_metadata)
+    }
+
+    #[view]
+    /// Get total supply of a token
+    /// Returns total number of tokens in circulation
+    public fun total_supply(token_metadata: Object<Metadata>): u128 {
+        let supply_option = fungible_asset::supply(token_metadata);
+        if (supply_option.is_some()) {
+            supply_option.extract()
+        } else {
+            0
+        }
+    }
+
+    #[view]
+    /// Get token name
+    public fun name(token_metadata: Object<Metadata>): String {
+        fungible_asset::name(token_metadata)
+    }
+
+    #[view]
+    /// Get token symbol
+    public fun symbol(token_metadata: Object<Metadata>): String {
+        fungible_asset::symbol(token_metadata)
+    }
+
+    #[view]
+    /// Get token decimals
+    public fun decimals(token_metadata: Object<Metadata>): u8 {
+        fungible_asset::decimals(token_metadata)
     }
 }
