@@ -7,10 +7,10 @@ Decentralized structured finance platform built on Aptos blockchain.
 StrataFi transforms illiquid real-world credit assets into liquid, tradable digital instruments.
 
 ### Key Features
-- 🏦 **Risk Tranching**: Senior, Mezzanine, and Junior tranches
-- 🪙 **Fungible Asset Tokens**: Each tranche as tradable FA
-- 📈 **Bonding Curve Pricing**: Optional AMM-style pricing
-- ⚡ **Atomic Settlement**: Powered by Aptos Block-STM
+-  **Risk Tranching**: Senior, Mezzanine, and Junior tranches
+-  **Fungible Asset Tokens**: Each tranche as tradable FA
+-  **Bonding Curve Pricing**: Optional AMM-style pricing
+-  **Atomic Settlement**: Powered by Aptos Block-STM
 
 ## Tech Stack
 
@@ -36,12 +36,13 @@ sources/
 
 ## Development Status
 
-🚧 **Under Active Development**
+ **Under Active Development**
 
 - [x] STFI protocol token
 - [x] Pool token factory
 - [x] Math utilities for bonding curves
 - [ ] Pool creation & securitization
+- [ ] vault modules
 - [ ] Investment & deposit logic
 - [ ] Waterfall distribution engine
 - [ ] Oracle integration
