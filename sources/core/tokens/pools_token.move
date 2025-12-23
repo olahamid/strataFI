@@ -88,12 +88,12 @@ module stratafi::pool_tokens {
         let mint_ref = fungible_asset::generate_mint_ref(constructor_ref);
         let burn_ref = fungible_asset::generate_burn_ref(constructor_ref);
 
-        let metadata_object_signer = object::generate_signer(constructor_ref);
+        let metadata_object_signer = constructor_ref.generate_signer();
         move_to(&metadata_object_signer, Pool_Token_Capabilities {
             mint_cap: mint_ref,
             burn_cap: burn_ref,
         });
-        object::object_from_constructor_ref<Metadata>(constructor_ref)
+        constructor_ref.object_from_constructor_ref::<Metadata>()
     }
 
     fun generate_token_seed(pool_id: u64, tranche_type: u8): vector<u8> {
@@ -115,7 +115,7 @@ module stratafi::pool_tokens {
         amount: u64,
     ) acquires Pool_Token_Capabilities {
         // get the address of the token 
-        let token_addr = object::object_address(&token_metadata);
+        let token_addr = token_metadata.object_address();
         // borrow the capabilities
         let capabilities = borrow_global<Pool_Token_Capabilities>(token_addr);
 
@@ -124,7 +124,7 @@ module stratafi::pool_tokens {
             token_metadata,
         );
 
-        let fa = fungible_asset::mint(&capabilities.mint_cap, amount);
+        let fa = capabilities.mint_cap.mint(amount);
         fungible_asset::deposit(recipient_store, fa);
     }
 
@@ -136,7 +136,7 @@ module stratafi::pool_tokens {
         amount: u64,
     ) acquires Pool_Token_Capabilities {
         // get the address of the token
-        let token_addr = object::object_address(&token_metadata);
+        let token_addr = token_metadata.object_address();
         // ge tthe capability of the token to burn 
         let capabilities = borrow_global<Pool_Token_Capabilities>(token_addr);
         // get the holder's store
@@ -151,7 +151,7 @@ module stratafi::pool_tokens {
             amount
         );
 
-        fungible_asset::burn(&capabilities.burn_cap, fa);
+        capabilities.burn_cap.burn(fa);
     }
     
 

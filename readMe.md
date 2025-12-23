@@ -41,9 +41,9 @@ sources/
 - [x] STFI protocol token
 - [x] Pool token factory
 - [x] Math utilities for bonding curves
-- [ ] Pool creation & securitization
+- [x] Pool creation & securitization
 - [ ] vault modules
-- [ ] Investment & deposit logic
+- [x] Investment & deposit logic
 - [ ] Waterfall distribution engine
 - [ ] Oracle integration
 - [ ] Compliance layer (KYC/AML)
