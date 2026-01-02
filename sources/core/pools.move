@@ -1,7 +1,6 @@
-// ============================================
-// StrataFi Pool maker Module
-// 
-// ============================================
+// ==========================// 
+// StrataFi Pool maker Module//
+// ==========================// 
 
 // @fixME add dfferent tranche types and their handling
 // @fixME add events
@@ -13,8 +12,8 @@
 module stratafi::pools {
     use stratafi::pool_tokens;
     use stratafi::math;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::timestamp;
+    use aptos_framework::coin::{Self};
+    //use aptos_framework::timestamp;
     use aptos_framework::fungible_asset::Metadata;
     use aptos_std::table::{Self, Table};
     use std::string::{Self, String};
@@ -50,7 +49,7 @@ module stratafi::pools {
     // =========================
     // STRUCTS
     // =========================
-    struct Pool has store {
+    struct Pool has store, copy, drop {
         pool_id: u64,
         asset_Creator: address,
 
@@ -255,15 +254,19 @@ module stratafi::pools {
         assert!(pool.status == STATUS_ACTIVE, E_POOL_NOT_ACTIVE);
         assert!(!pool.use_bonding_curve, E_INVALID_ALLOCATION);
 
+        let fixed_price = pool.fixed_price;
+        assert!(fixed_price > 0, E_INVALID_ALLOCATION);
+
         let tranche = get_tranche_mut(pool, tranche_type);
 
         // computet the token to be minted. we can use formula usdc_amount/ pool.fixed_price
-        let token_amount = usdc_amount / pool.fixed_price;
+        let token_amount = usdc_amount / fixed_price;
         
         // check that the investors does go beyond the target raise
         let new_raise = tranche.current_raise + usdc_amount;
         assert!(new_raise <= tranche.target_raise, E_INVALID_ALLOCATION);
 
+        let token_metadata = tranche.token_metadata;
         let investor_addr = signer::address_of(investor);
         // TODO allow investor to be a able to buy with different tokens later on
         let payment = coin::withdraw<STFI>(investor, usdc_amount);
@@ -272,12 +275,12 @@ module stratafi::pools {
         // TODO transfer to treasury OR create a new VAULT module to handle this
         coin::destroy_zero(payment);
 
+        tranche.current_raise = new_raise;
         // update the state 
         pool.usdc_balance += usdc_amount;
-        tranche.current_raise = new_raise;
 
         pool_tokens::mint_pool_tokens(
-            tranche.token_metadata,
+            token_metadata,
             investor_addr,
             token_amount,
         );
@@ -300,20 +303,26 @@ module stratafi::pools {
         assert!(pool.status == STATUS_ACTIVE, E_POOL_NOT_ACTIVE);
         assert!(pool.use_bonding_curve, E_INVALID_ALLOCATION);
 
+        let fee_numerator = pool.fee_numerator;
+        let fee_denominator = pool.fee_denominator;
+        let usdc_reserve = pool.usdc_reserve;
+        let token_reserve = pool.token_reserve;
+
         let tranche = get_tranche_mut(pool, tranche_type);
 
+        let token_metadata = tranche.token_metadata;
         // compute the amount of pool token to be minted using bonding curve math
         // TODO: implement bonding curve calculation using math module functions
-        let fee = math::set_fraction(pool.fee_numerator, pool.fee_denominator);
+        let fee = math::set_fraction(fee_numerator, fee_denominator);
         let token_amount = math::get_amount_out(
             usdc_amount,
-            pool.usdc_reserve,
-            pool.token_reserve,
+            usdc_reserve,
+            token_reserve,
             fee
         );
 
-        // check that the investors does not go beyond the target raise
         let new_raise = tranche.current_raise + usdc_amount;
+        // check that the investors does not go beyond the target raise
         assert!(new_raise <= tranche.target_raise, E_INVALID_ALLOCATION);
 
         let investor_addr = signer::address_of(investor);
@@ -324,14 +333,14 @@ module stratafi::pools {
         // TODO transfer to treasury OR create a new VAULT module to handle this
         coin::destroy_zero(payment);
 
+        tranche.current_raise = new_raise;
         // update the states
         pool.usdc_balance += usdc_amount;
         pool.usdc_reserve += usdc_amount;
-        tranche.current_raise = new_raise;
         pool.token_reserve -= token_amount;
 
         pool_tokens::mint_pool_tokens(
-            tranche.token_metadata,
+            token_metadata,
             investor_addr,
             token_amount,
         );
@@ -354,13 +363,22 @@ module stratafi::pools {
     }
 
     #[view]
-    /// Get complete pool information
-    /// @param pool_id - Which pool to query
-    /// @return Pool struct with all data
-    public fun get_pool(pool_id: u64): Pool acquires PoolRegistry {
+    /// Get specific pool information
+    /// @param pool_id - Which pool
+    /// @return Pool struct
+    public fun get_pool_info(pool_id: u64): (u64, address, String, u64, u8, u64) acquires PoolRegistry {
         let registry = borrow_global<PoolRegistry>(@stratafi);
         assert!(registry.pools.contains(pool_id), E_POOL_NOT_FOUND);
-        *registry.pools.borrow(pool_id)
+
+        let pool = registry.pools.borrow(pool_id);
+        (
+            pool.pool_id,
+            pool.asset_Creator,
+            pool.asset_type,
+            pool.total_value,
+            pool.status,
+            pool.usdc_balance
+        )
     }
 
     #[view]
@@ -412,6 +430,6 @@ module stratafi::pools {
         pool.status
     }
 
-    
+
 }
 

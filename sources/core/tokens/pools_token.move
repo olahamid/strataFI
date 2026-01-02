@@ -93,7 +93,7 @@ module stratafi::pool_tokens {
             mint_cap: mint_ref,
             burn_cap: burn_ref,
         });
-        constructor_ref.object_from_constructor_ref::<Metadata>()
+        object::object_from_constructor_ref<Metadata>(constructor_ref)
     }
 
     fun generate_token_seed(pool_id: u64, tranche_type: u8): vector<u8> {
